@@ -1,5 +1,63 @@
--- Data Cleaning
-For checking the columns which have  null values in our dataset
+
+# Retail Sales Analysis SQL Project
+
+## Project Overview
+
+**Project Title**: Retail Sales Analysis  
+**Level**: Beginner  
+**Database**: `p1_retail_db`
+
+This project demonstrates foundational SQL skills used by data analysts to explore, clean, and analyze retail sales data. It includes setting up a retail database, performing EDA, and answering business questions using SQL queries.
+
+---
+
+## Objectives
+
+1. **Database Setup**: Create and populate a retail sales database.
+2. **Data Cleaning**: Identify and handle missing/null values.
+3. **Exploratory Data Analysis (EDA)**: Gain insights into data structure and content.
+4. **Business Analysis**: Answer practical business queries using SQL.
+
+---
+
+## Project Structure
+
+###  1. Database Setup
+
+```sql
+CREATE DATABASE project_1;
+
+CREATE TABLE retail_sales (
+    transactions_id INT PRIMARY KEY,
+    sale_date DATE,	
+    sale_time TIME,
+    customer_id INT,	
+    gender VARCHAR(10),
+    age INT,
+    category VARCHAR(35),
+    quantity INT,
+    price_per_unit FLOAT,	
+    cogs FLOAT,
+    total_sale FLOAT
+);
+```
+
+---
+
+###  2. Data Exploration & Cleaning
+
+```sql
+-- Record Count
+SELECT COUNT(*) FROM retail_sales;
+
+-- Unique Customers
+SELECT COUNT(DISTINCT customer_id) FROM retail_sales;
+
+-- Product Categories
+SELECT DISTINCT category FROM retail_sales;
+
+-- Identify Nulls
+-- For checking the columns which have  null values in our dataset
 SELECT 
   SUM(CASE WHEN transactions_id IS NULL THEN 1 ELSE 0 END) AS null_transaction_id,
   SUM(CASE WHEN sale_date IS NULL THEN 1 ELSE 0 END) AS null_sale_date,
@@ -15,13 +73,13 @@ SELECT
 FROM retail_sales;
 
 -- -- NOW VIEWING THE NULL VALUES
--- SELECT *
--- FROM retail_sales
--- WHERE age IS NULL
---    OR quantity IS NULL
---    OR price_per_unit IS NULL
---    OR cogs IS NULL
---    OR total_sale IS NULL;
+SELECT *
+FROM retail_sales
+WHERE age IS NULL
+   OR quantity IS NULL
+   OR price_per_unit IS NULL
+   OR cogs IS NULL
+   OR total_sale IS NULL;
 
 -- Deleting the null values
 DELETE
@@ -32,127 +90,140 @@ WHERE age IS NULL
    OR cogs IS NULL
    OR total_sale IS NULL;
 
-SELECT COUNT(*)
-FROM retail_sales;
 
+-- Delete Null Records
+DELETE FROM retail_sales
+WHERE 
+    sale_date IS NULL OR sale_time IS NULL OR customer_id IS NULL OR 
+    gender IS NULL OR age IS NULL OR category IS NULL OR 
+    quantity IS NULL OR price_per_unit IS NULL OR cogs IS NULL;
+```
 
--- Data Exploration Step 
--- How many sales do we have?
-SELECT COUNT(*) AS 	total_sales
-FROM retail_sales;
+---
 
--- How many unique customers do we have?
-SELECT COUNT(DISTINCT(customer_id)) AS total_customers
-FROM retail_sales;
+###  3. Data Analysis & Business Queries
 
--- types of products
-SELECT DISTINCT(category) AS types_of_products
-FROM retail_sales
+#### Q1. Sales on a Specific Date
+```sql
+SELECT * FROM retail_sales WHERE sale_date = '2022-11-05';
+```
 
+#### Q2. Clothing Sales in Nov-2022 (quantity ≥ 4)
+```sql
+SELECT * FROM retail_sales
+WHERE category = 'Clothing'
+  AND TO_CHAR(sale_date, 'YYYY-MM') = '2022-11'
+  AND quantity >= 4;
+```
 
--- Data Analysis & Business Key Problems & Answers
-
--- My Analysis & Findings
--- Q.1 Write a SQL query to retrieve all columns for sales made on '2022-11-05
--- Q.2 Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is more than 10 in the month of Nov-2022
--- Q.3 Write a SQL query to calculate the total sales (total_sale) for each category.
--- Q.4 Write a SQL query to find the average age of customers who purchased items from the 'Beauty' category.
--- Q.5 Write a SQL query to find all transactions where the total_sale is greater than 1000.
--- Q.6 Write a SQL query to find the total number of transactions (transaction_id) made by each gender in each category.
--- Q.7 Write a SQL query to calculate the average sale for each month. Find out best selling month in each year
--- Q.8 Write a SQL query to find the top 5 customers based on the highest total sales 
--- Q.9 Write a SQL query to find the number of unique customers who purchased items from each category.
--- Q.10 Write a SQL query to create each shift and number of orders (Example Morning <=12, Afternoon Between 12 & 17, Evening >17)
-
--- Q.1 Write a SQL query to retrieve all columns for sales made on '2022-11-05
-SELECT * 
-FROM retail_sales
-WHERE sale_date='2022-11-05'
-
-
--- Q.2(a) Write a SQL query to retrieve the sum of quantities where the category is 'Clothing' and the quantity sold is more than 10 in the month of Nov-2022
-
-SELECT EXTRACT(YEAR FROM sale_date) AS year,EXTRACT(MONTH FROM sale_date)AS month,category,SUM(quantity) AS quantity_sold
-FROM retail_sales 
-WHERE category='Clothing'
-GROUP BY category ,month,year
-HAVING EXTRACT(MONTH FROM sale_date)=11 AND (EXTRACT(YEAR FROM sale_date))=2022 AND SUM(quantity)>10
-
--- Q.2(b) Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is atleast 4 in the month of Nov-2022
-SELECT *
-FROM retail_sales
-WHERE category='Clothing' AND (EXTRACT (MONTH FROM sale_date))=11 AND (quantity>=4) AND (EXTRACT (YEAR FROM sale_date))=2022
-
--- Q.3 Write a SQL query to calculate the total sales (total_sale) for each category.
-SELECT category,SUM(total_sale) AS sum_of_total_sales 
+#### Q3. Total Sales by Category
+```sql
+SELECT category, SUM(total_sale) AS net_sale, COUNT(*) AS total_orders
 FROM retail_sales
 GROUP BY category;
+```
 
--- Q.4 Write a SQL query to find the average age of customers who purchased items from the 'Beauty' category.
-SELECT category,ROUND(AVG(age),2) AS avg_age
+#### Q4. Average Age of Beauty Category Buyers
+```sql
+SELECT ROUND(AVG(age), 2) AS avg_age
 FROM retail_sales
-GROUP BY category HAVING category='Beauty'
-.0
-1
+WHERE category = 'Beauty';
+```
 
--- Q.5 Write a SQL query to find all transactions where the total_sale is greater than 1000.
-SELECT *
+#### Q5. High Value Transactions (total_sale > 1000)
+```sql
+SELECT * FROM retail_sales WHERE total_sale > 1000;
+```
+
+#### Q6. Total Transactions by Gender and Category
+```sql
+SELECT category, gender, COUNT(*) AS total_trans
 FROM retail_sales
-WHERE total_sale>1000
+GROUP BY category, gender
+ORDER BY category;
+```
 
--- Q.6 Write a SQL query to find the total number of transactions (transaction_id) made by each gender in each category.
-SELECT category,gender,COUNT(transactions_id)
-FROM retail_sales
-GROUP BY gender,category
-ORDER BY category
-
--- Q.7 Write a SQL query to calculate the average sale for each month. Find out best selling month in each year
-WITH monthly_sales AS (
+#### Q7. Best Selling Month in Each Year
+```sql
+SELECT year, month, avg_sale
+FROM (
   SELECT 
     EXTRACT(YEAR FROM sale_date) AS year,
     EXTRACT(MONTH FROM sale_date) AS month,
-    AVG(total_sale) AS total_monthly_sale
+    AVG(total_sale) AS avg_sale,
+    RANK() OVER (PARTITION BY EXTRACT(YEAR FROM sale_date) ORDER BY AVG(total_sale) DESC) AS rank
   FROM retail_sales
   GROUP BY year, month
-),
-ranked_months AS (
-  SELECT *,
-         RANK() OVER (PARTITION BY year ORDER BY total_monthly_sale DESC) AS rank
-  FROM monthly_sales
-)
-SELECT year, month, ROUND(total_monthly_sale::numeric,2)
-FROM ranked_months
-WHERE rank = 1
-ORDER BY year; 
+) t1
+WHERE rank = 1;
+```
 
--- Q.8 Write a SQL query to find the top 5 customers based on the highest total sales 
-SELECT  customer_id,SUM(total_sale) AS total_sale_by_each_customer
+#### Q8. Top 5 Customers by Total Sales
+```sql
+SELECT customer_id, SUM(total_sale) AS total_sales
 FROM retail_sales
 GROUP BY customer_id
-ORDER BY total_sale_by_each_customer DESC
-LIMIT 5
+ORDER BY total_sales DESC
+LIMIT 5;
+```
 
-
--- Q.9 Write a SQL query to find the number of unique customers who purchased items from each category.
-SELECT category, COUNT(DISTINCT customer_id) AS unique_customers_count
+#### Q9. Unique Customers per Category
+```sql
+SELECT category, COUNT(DISTINCT customer_id) AS cnt_unique_cs
 FROM retail_sales
-WHERE category IN ('Beauty', 'Clothing', 'Electronics')
 GROUP BY category;
+```
 
--- Q.10 Write a SQL query to create each shift and number of orders (Example Morning <=12, Afternoon Between 12 & 17, Evening >17)
-SELECT 
-CASE 
-WHEN EXTRACT(HOUR FROM sale_time)<=12 THEN 'Morning'
-WHEN EXTRACT(HOUR FROM sale_time) > 12 AND EXTRACT(HOUR FROM sale_time) <= 17 THEN 'Afternoon'
-WHEN 17<EXTRACT(HOUR FROM sale_time) THEN 'Evening'
-END AS shift_name,
-COUNT(*) AS number_of_orders
-FROM retail_sales
-GROUP BY shift_name
-ORDER by shift_name;
+#### Q10. Orders by Shift (Morning, Afternoon, Evening)
+```sql
+WITH hourly_sale AS (
+  SELECT *, 
+    CASE
+      WHEN EXTRACT(HOUR FROM sale_time) < 12 THEN 'Morning'
+      WHEN EXTRACT(HOUR FROM sale_time) BETWEEN 12 AND 17 THEN 'Afternoon'
+      ELSE 'Evening'
+    END AS shift
+  FROM retail_sales
+)
+SELECT shift, COUNT(*) AS total_orders
+FROM hourly_sale
+GROUP BY shift;
+```
 
+---
 
--- End of Project
+## Findings
 
+- Customers span various demographics and product interests.
+- Multiple high-value transactions hint at premium products.
+- Clear sales seasonality patterns are observable.
+- Most popular categories and top-spending customers are identifiable.
 
+---
+
+## Reports
+
+- **Sales Summary**: Sales per category and customer insights.
+- **Trends**: Monthly trends and time-of-day sales distribution.
+- **Customer Analysis**: Unique buyers, repeat customers, and volume.
+
+---
+
+## Conclusion
+
+This beginner-friendly SQL project showcases key database operations, EDA, and practical query writing. It offers insights into business metrics that are essential for decision making and helps lay a foundation for real-world data analyst projects.
+
+---
+
+## Tech Stack
+
+- **SQL**: PostgreSQL
+- **Tools**: DBMS like pgAdmin, DBeaver, or any SQL IDE
+
+---
+
+##  Author
+
+**Retail Sales Analysis SQL Project**  
+By: Akshat Gupta   
 
