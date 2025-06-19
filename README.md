@@ -1,4 +1,4 @@
-
+ 
 # Retail Sales Analysis SQL Project
 
 ## Project Overview
@@ -109,85 +109,103 @@ SELECT * FROM retail_sales WHERE sale_date = '2022-11-05';
 ```
 
 #### Q2. Clothing Sales in Nov-2022 (quantity ≥ 4)
+#### Q.2(a) Write a SQL query to retrieve the sum of quantities where the category is 'Clothing' and the quantity sold is more than 10 in the month of Nov-2022
 ```sql
-SELECT * FROM retail_sales
-WHERE category = 'Clothing'
-  AND TO_CHAR(sale_date, 'YYYY-MM') = '2022-11'
-  AND quantity >= 4;
+SELECT EXTRACT(YEAR FROM sale_date) AS year,EXTRACT(MONTH FROM sale_date)AS month,category,SUM(quantity) AS quantity_sold
+FROM retail_sales 
+WHERE category='Clothing'
+GROUP BY category ,month,year
+HAVING EXTRACT(MONTH FROM sale_date)=11 AND (EXTRACT(YEAR FROM sale_date))=2022 AND SUM(quantity)>10
 ```
 
+#### Q.2(b) Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is atleast 4 in the month of Nov-2022
+```sql
+SELECT *
+FROM retail_sales
+WHERE category='Clothing' AND (EXTRACT (MONTH FROM sale_date))=11 AND (quantity>=4) AND (EXTRACT (YEAR FROM sale_date))=2022
+```
 #### Q3. Total Sales by Category
 ```sql
-SELECT category, SUM(total_sale) AS net_sale, COUNT(*) AS total_orders
+SELECT category,SUM(total_sale) AS sum_of_total_sales 
 FROM retail_sales
 GROUP BY category;
 ```
 
 #### Q4. Average Age of Beauty Category Buyers
 ```sql
-SELECT ROUND(AVG(age), 2) AS avg_age
+SELECT category,ROUND(AVG(age),2) AS avg_age
 FROM retail_sales
-WHERE category = 'Beauty';
+GROUP BY category HAVING category='Beauty';
+
 ```
 
 #### Q5. High Value Transactions (total_sale > 1000)
 ```sql
-SELECT * FROM retail_sales WHERE total_sale > 1000;
+SELECT *
+FROM retail_sales
+WHERE total_sale>100;
 ```
 
 #### Q6. Total Transactions by Gender and Category
 ```sql
-SELECT category, gender, COUNT(*) AS total_trans
+SELECT category,gender,COUNT(transactions_id)
 FROM retail_sales
-GROUP BY category, gender
-ORDER BY category;
+GROUP BY gender,category
+ORDER BY category
 ```
 
 #### Q7. Best Selling Month in Each Year
 ```sql
-SELECT year, month, avg_sale
-FROM (
+WITH monthly_sales AS (
   SELECT 
     EXTRACT(YEAR FROM sale_date) AS year,
     EXTRACT(MONTH FROM sale_date) AS month,
-    AVG(total_sale) AS avg_sale,
-    RANK() OVER (PARTITION BY EXTRACT(YEAR FROM sale_date) ORDER BY AVG(total_sale) DESC) AS rank
+    AVG(total_sale) AS total_monthly_sale
   FROM retail_sales
   GROUP BY year, month
-) t1
-WHERE rank = 1;
+),
+ranked_months AS (
+  SELECT *,
+         RANK() OVER (PARTITION BY year ORDER BY total_monthly_sale DESC) AS rank
+  FROM monthly_sales
+)
+SELECT year, month, ROUND(total_monthly_sale::numeric,2)
+FROM ranked_months
+WHERE rank = 1
+ORDER BY year; 
+
 ```
 
 #### Q8. Top 5 Customers by Total Sales
 ```sql
-SELECT customer_id, SUM(total_sale) AS total_sales
+SELECT  customer_id,SUM(total_sale) AS total_sale_by_each_customer
 FROM retail_sales
 GROUP BY customer_id
-ORDER BY total_sales DESC
-LIMIT 5;
+ORDER BY total_sale_by_each_customer DESC
+LIMIT 5
 ```
 
 #### Q9. Unique Customers per Category
 ```sql
-SELECT category, COUNT(DISTINCT customer_id) AS cnt_unique_cs
+SELECT category, COUNT(DISTINCT customer_id) AS unique_customers_count
 FROM retail_sales
+WHERE category IN ('Beauty', 'Clothing', 'Electronics')
 GROUP BY category;
 ```
 
 #### Q10. Orders by Shift (Morning, Afternoon, Evening)
 ```sql
-WITH hourly_sale AS (
-  SELECT *, 
-    CASE
-      WHEN EXTRACT(HOUR FROM sale_time) < 12 THEN 'Morning'
-      WHEN EXTRACT(HOUR FROM sale_time) BETWEEN 12 AND 17 THEN 'Afternoon'
-      ELSE 'Evening'
-    END AS shift
-  FROM retail_sales
-)
-SELECT shift, COUNT(*) AS total_orders
-FROM hourly_sale
-GROUP BY shift;
+SELECT 
+CASE 
+WHEN EXTRACT(HOUR FROM sale_time)<=12 THEN 'Morning'
+WHEN EXTRACT(HOUR FROM sale_time) > 12 AND EXTRACT(HOUR FROM sale_time) <= 17 THEN 'Afternoon'
+WHEN 17<EXTRACT(HOUR FROM sale_time) THEN 'Evening'
+END AS shift_name,
+COUNT(*) AS number_of_orders
+FROM retail_sales
+GROUP BY shift_name
+ORDER by shift_name;
+
 ```
 
 ---
